@@ -152,14 +152,18 @@ stack(
 	}
 
 	.topbar button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		background: #3a3a3a;
 		border: 1px solid #4a4a4a;
 		border-radius: 0.25rem;
 		color: #ddd;
 		cursor: pointer;
-		padding: 0.25rem 0.6rem;
+		padding: 0.1rem 0.35rem;
 		font-family: inherit;
-		font-size: 0.8rem;
+		font-size: 0.75rem;
+		line-height: 1;
 		transition: background 0.15s;
 	}
 
