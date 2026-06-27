@@ -23,6 +23,14 @@
 	export function getValue(): string {
 		return view ? view.state.doc.toString() : value;
 	}
+
+	/** Replace the editor contents (used for live shared-code updates). */
+	export function setValue(next: string) {
+		if (!view) return;
+		const current = view.state.doc.toString();
+		if (current === next) return;
+		view.dispatch({ changes: { from: 0, to: current.length, insert: next } });
+	}
 </script>
 
 <div class="editor" bind:this={container}></div>

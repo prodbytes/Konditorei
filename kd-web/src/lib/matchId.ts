@@ -1,0 +1,96 @@
+// Human-friendly match IDs in the GitHub-Codespaces style:
+// <adjective>-<adjective>-<instrument>, e.g. "wobbly-sneaky-kazoo".
+// Space ≈ adjectives² × instruments, so collisions stay unlikely.
+
+const adjectives = [
+	'wobbly',
+	'sneaky',
+	'grumpy',
+	'zesty',
+	'funky',
+	'cheeky',
+	'loopy',
+	'sleepy',
+	'jumpy',
+	'silly',
+	'cranky',
+	'spicy',
+	'goofy',
+	'dizzy',
+	'fuzzy',
+	'witty',
+	'nifty',
+	'perky',
+	'quirky',
+	'snazzy',
+	'wacky',
+	'bouncy',
+	'cosmic',
+	'dapper',
+	'feisty',
+	'groovy',
+	'jolly',
+	'mellow',
+	'nimble',
+	'plucky',
+	'rowdy',
+	'sassy',
+	'swift',
+	'tipsy',
+	'vivid',
+	'zippy',
+	'brave',
+	'crisp',
+	'frosty',
+	'glossy',
+	'husky',
+	'lucky',
+	'minty',
+	'peppy',
+	'rusty',
+	'shiny',
+	'tidy',
+	'yummy',
+	'breezy',
+	'chunky'
+];
+
+const instruments = [
+	'kazoo',
+	'banjo',
+	'tuba',
+	'bongo',
+	'conga',
+	'gong',
+	'oboe',
+	'sax',
+	'harp',
+	'drum',
+	'fiddle',
+	'flute',
+	'cello',
+	'viola',
+	'lyre',
+	'sitar',
+	'maraca',
+	'cymbal',
+	'whistle',
+	'piano',
+	'organ',
+	'trumpet',
+	'shaker',
+	'triangle',
+	'tambo',
+	'bell',
+	'theremin',
+	'ukulele',
+	'clarinet',
+	'didgeridoo'
+];
+
+const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+/** Generate a human-friendly match ID like "funky-zippy-banjo". */
+export function generateMatchId(): string {
+	return `${pick(adjectives)}-${pick(adjectives)}-${pick(instruments)}`;
+}
