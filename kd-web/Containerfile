@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1
+
+# ---- Stage 1: build ----------------------------------------------------------
+# Install all deps and produce the SvelteKit Node build (build/).
+FROM docker.io/library/node:22-alpine AS build
+WORKDIR /app
+
+# Install dependencies first (better layer caching).
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Build the app.
+COPY . .
+RUN npm run build
+
+# Strip dev dependencies so we can copy a lean node_modules into the runtime.
+RUN npm prune --omit=dev
+
+# ---- Stage 2: runtime --------------------------------------------------------
+# Only the compiled server, production node_modules and package.json ship.
+FROM docker.io/library/node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
+
+# Run as the built-in non-root user.
+USER node
+
+COPY --chown=node:node --from=build /app/build ./build
+COPY --chown=node:node --from=build /app/node_modules ./node_modules
+COPY --chown=node:node --from=build /app/package.json ./package.json
+
+EXPOSE 3000
+CMD ["node", "build"]
