@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  kd-web — master stack. Creates the VPC, ALB and ECS tiers as nested stacks and
+  wires them together with cross-stack references (!GetAtt <Stack>.Outputs.<X>),
+  feeding each tier's outputs in as the next tier's parameters.
+
+Parameters:
+  ContainerImage:
+    Type: String
+    Default: public.ecr.aws/d1o2c4n7/kd-web:latest
+    Description: Container image to deploy
+  ContainerPort:
+    Type: Number
+    Default: 3000
+  DesiredCount:
+    Type: Number
+    Default: 1
+  Cpu:
+    Type: String
+    Default: '256'
+  Memory:
+    Type: String
+    Default: '512'
+
+Resources:
+  # --- Tier 1: networking ---------------------------------------------------
+  VpcStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./vpc.yaml
+      TimeoutInMinutes: 15
+
+  # --- Tier 2: load balancer ------------------------------------------------
+  AlbStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./alb.yaml
+      TimeoutInMinutes: 15
+      Parameters:
+        VpcId: !GetAtt VpcStack.Outputs.VpcId
+        Subnets: !Join
+          - ','
+          - - !GetAtt VpcStack.Outputs.PublicSubnet1Id
+            - !GetAtt VpcStack.Outputs.PublicSubnet2Id
+        ContainerPort: !Ref ContainerPort
+
+  # --- Tier 3: ECS service --------------------------------------------------
+  # DependsOn AlbStack so the listener exists before the service registers.
+  EcsStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: AlbStack
+    Properties:
+      TemplateURL: ./ecs.yaml
+      TimeoutInMinutes: 20
+      Parameters:
+        VpcId: !GetAtt VpcStack.Outputs.VpcId
+        Subnets: !Join
+          - ','
+          - - !GetAtt VpcStack.Outputs.PublicSubnet1Id
+            - !GetAtt VpcStack.Outputs.PublicSubnet2Id
+        TargetGroupArn: !GetAtt AlbStack.Outputs.TargetGroupArn
+        AlbSecurityGroupId: !GetAtt AlbStack.Outputs.AlbSecurityGroupId
+        ContainerImage: !Ref ContainerImage
+        ContainerPort: !Ref ContainerPort
+        DesiredCount: !Ref DesiredCount
+        Cpu: !Ref Cpu
+        Memory: !Ref Memory
+
+Outputs:
+  AppUrl:
+    Description: Public URL of the deployed kd-web app
+    Value: !GetAtt AlbStack.Outputs.LoadBalancerUrl
+  ClusterName:
+    Value: !GetAtt EcsStack.Outputs.ClusterName
+  ServiceName:
+    Value: !GetAtt EcsStack.Outputs.ServiceName

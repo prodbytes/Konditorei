@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: kd-web — master stack. Creates the VPC, ALB and ECS tiers as nested
+  stacks and wires them together with cross-stack references (!GetAtt 
+  <Stack>.Outputs.<X>), feeding each tier's outputs in as the next tier's 
+  parameters.
+Parameters:
+  ContainerImage:
+    Type: String
+    Default: public.ecr.aws/d1o2c4n7/kd-web:latest
+    Description: Container image to deploy
+  ContainerPort:
+    Type: Number
+    Default: 3000
+  DesiredCount:
+    Type: Number
+    Default: 1
+  Cpu:
+    Type: String
+    Default: '256'
+  Memory:
+    Type: String
+    Default: '512'
+Resources:
+  VpcStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 
+        https://s3.us-east-1.amazonaws.com/kd-cfn-artifacts-712151682816-us-east-1/kd-cfn/1df970ddae8bb428d11c6b409461d655.template
+      TimeoutInMinutes: 15
+  AlbStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 
+        https://s3.us-east-1.amazonaws.com/kd-cfn-artifacts-712151682816-us-east-1/kd-cfn/487d161c5b5b6c4f96aaa697e5f3ea31.template
+      TimeoutInMinutes: 15
+      Parameters:
+        VpcId:
+          Fn::GetAtt:
+          - VpcStack
+          - Outputs.VpcId
+        Subnets:
+          Fn::Join:
+          - ','
+          - - Fn::GetAtt:
+              - VpcStack
+              - Outputs.PublicSubnet1Id
+            - Fn::GetAtt:
+              - VpcStack
+              - Outputs.PublicSubnet2Id
+        ContainerPort:
+          Ref: ContainerPort
+  EcsStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: AlbStack
+    Properties:
+      TemplateURL: 
+        https://s3.us-east-1.amazonaws.com/kd-cfn-artifacts-712151682816-us-east-1/kd-cfn/23c4484f4098601ddee8624b2cc05efe.template
+      TimeoutInMinutes: 20
+      Parameters:
+        VpcId:
+          Fn::GetAtt:
+          - VpcStack
+          - Outputs.VpcId
+        Subnets:
+          Fn::Join:
+          - ','
+          - - Fn::GetAtt:
+              - VpcStack
+              - Outputs.PublicSubnet1Id
+            - Fn::GetAtt:
+              - VpcStack
+              - Outputs.PublicSubnet2Id
+        TargetGroupArn:
+          Fn::GetAtt:
+          - AlbStack
+          - Outputs.TargetGroupArn
+        AlbSecurityGroupId:
+          Fn::GetAtt:
+          - AlbStack
+          - Outputs.AlbSecurityGroupId
+        ContainerImage:
+          Ref: ContainerImage
+        ContainerPort:
+          Ref: ContainerPort
+        DesiredCount:
+          Ref: DesiredCount
+        Cpu:
+          Ref: Cpu
+        Memory:
+          Ref: Memory
+Outputs:
+  AppUrl:
+    Description: Public URL of the deployed kd-web app
+    Value:
+      Fn::GetAtt:
+      - AlbStack
+      - Outputs.LoadBalancerUrl
+  ClusterName:
+    Value:
+      Fn::GetAtt:
+      - EcsStack
+      - Outputs.ClusterName
+  ServiceName:
+    Value:
+      Fn::GetAtt:
+      - EcsStack
+      - Outputs.ServiceName
