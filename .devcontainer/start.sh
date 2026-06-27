@@ -19,12 +19,19 @@ if command -v gh >/dev/null 2>&1 && [ -n "${CODESPACE_NAME:-}" ]; then
     || echo "    (could not set visibility automatically — set port ${PORT} to 'Public' in the Ports panel)"
 fi
 
-# Start the production server in the background if it isn't already running.
+# Start the production server if it isn't already running. Use setsid so the
+# server survives after this lifecycle command (postStartCommand) exits —
+# otherwise the devcontainer reaps the background process and the port closes.
 if curl -sf -o /dev/null "http://localhost:${PORT}/" 2>/dev/null; then
   echo "==> kd-web already running on ${PORT}."
 else
   echo "==> Starting kd-web on ${PORT} ..."
-  (cd "$APP_DIR" && HOST=0.0.0.0 PORT="${PORT}" nohup node build > /tmp/kd-web.log 2>&1 &)
+  ( cd "$APP_DIR" && HOST=0.0.0.0 PORT="${PORT}" setsid node build > /tmp/kd-web.log 2>&1 < /dev/null & )
+  # Wait until it's accepting connections so the port is forwarded on return.
+  for _ in $(seq 1 30); do
+    curl -sf -o /dev/null "http://localhost:${PORT}/" 2>/dev/null && break
+    sleep 1
+  done
 fi
 
 # Print the public URL if we're in a Codespace.
