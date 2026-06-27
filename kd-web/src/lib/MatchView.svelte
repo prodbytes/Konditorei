@@ -115,11 +115,12 @@
 		ref?.setValue(code);
 	}
 
-	// Load a random sample into the editor and play it.
+	// Load a random sample into the editor, share it, and play it.
 	async function gen(frame: FrameId) {
 		const ref = refFor(frame);
 		const sample = randomSample(ref?.getValue());
 		ref?.setValue(sample);
+		await publish(frame); // store it server-side so QR/URL opens load the same code
 		await select(frame); // select() reads the editor's (new) contents and plays
 	}
 
