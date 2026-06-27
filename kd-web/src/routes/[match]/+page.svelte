@@ -3,4 +3,7 @@
 	import MatchView from '$lib/MatchView.svelte';
 </script>
 
-<MatchView matchId={$page.params.match ?? ''} />
+<!-- Remount per match id so a new match initializes fresh frame buffers/code. -->
+{#key $page.params.match}
+	<MatchView matchId={$page.params.match ?? ''} />
+{/key}
