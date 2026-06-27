@@ -6,7 +6,8 @@
       "Bash(podman build *)",
       "Bash(podman rm *)",
       "Bash(podman run *)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" --max-time 8 http://127.0.0.1:3033/)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" --max-time 8 http://127.0.0.1:3033/)",
+      "WebSearch"
     ]
   }
 }

@@ -1,0 +1,22 @@
+{
+  "name": "Konditorei (kd-web)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "kd-web",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["cmillsdev.strudelvs", "svelte.svelte-vscode"]
+    }
+  },
+  "//": "Install + build once on create; start the server (and make the port public) on every start.",
+  "postCreateCommand": "cd kd-web && npm install && npm run build",
+  "postStartCommand": "bash .devcontainer/start.sh"
+}
