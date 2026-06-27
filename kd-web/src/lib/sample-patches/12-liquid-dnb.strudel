@@ -1,0 +1,28 @@
+// LIQUID DNB — smooth 172 BPM rollers with lush jazz chords and a sine sub,
+// over a flowing voronoi field.
+
+// start the Hydra visual engine
+await initHydra()
+// voronoi cells: scale 6, speed 0.3, blending 0.2
+voronoi(6, 0.3, 0.2)
+  // breathe the cell size with an oscillator
+  .modulateScale(osc(1.5), 0.2)
+  // tint blue (red, green, blue)
+  .color(0.2, 0.6, 0.9)
+  // drift the image slowly upward
+  .scrollY(0, 0.02)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // classic 2-bar liquid break
+  s("bd ~ ~ ~ ~ ~ sd ~ ~ ~ bd ~ ~ sd ~ ~").bank("RolandTR909").gain(0.8),
+  // fast 16th-note hats, quiet
+  s("hh*16").gain(0.25),
+  // jazzy 4-chord progression, auto-voiced on piano
+  chord("<Cm9 Fm9 Bbmaj7 Ebmaj7>").voicing().sound("piano").room(0.5).gain(0.5).slow(2),
+  // clean sine sub bass
+  note("c1 ~ g1 ~").sound("sine").gain(0.7)
+// tempo: 172 BPM (÷8 for a 2-bar pattern)
+).cpm(172 / 8)

@@ -1,0 +1,30 @@
+// HOUSE — a warm 124 BPM groove with piano stabs and a soft saw lead,
+// behind tiled rotating squares.
+
+// start the Hydra visual engine
+await initHydra()
+// a 4-sided shape: radius 0.3, edge smoothing 0.1
+shape(4, 0.3, 0.1)
+  // tile it into a 3×3 grid
+  .repeat(3, 3)
+  // rotate by 0.2, spinning at speed 0.1
+  .rotate(0.2, 0.1)
+  // tint teal (red, green, blue)
+  .color(0.2, 0.8, 0.7)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // 808 kick, four-on-the-floor
+  s("bd*4").bank("RolandTR808"),
+  // 808 hats only on the last beat (2 quick hits)
+  s("~ ~ ~ hh*2").bank("RolandTR808"),
+  // clap on the off-beat, with reverb
+  s("~ cp").room(0.4),
+  // one piano note per cycle, cycling through the chord
+  note("<c3 eb3 g3 bb3>").sound("piano").gain(0.6).room(0.3),
+  // saw arp on C-minor scale degrees, mellow filter
+  n("0 2 4 7").scale("C:minor").sound("sawtooth").lpf(900).gain(0.4)
+// tempo: 124 BPM
+).cpm(124 / 4)

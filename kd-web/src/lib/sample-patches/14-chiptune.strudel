@@ -1,0 +1,35 @@
+// CHIPTUNE — bouncy 8-bit square-wave arp with echo, over a pixelated visual.
+
+// start the Hydra visual engine
+await initHydra()
+// fast oscillator: frequency 40, sync 0.1, offset 0
+osc(40, 0.1, 0)
+  // crush it into a 40×40 pixel grid (retro look)
+  .pixelate(40, 40)
+  // tint bright green (red, green, blue)
+  .color(0.2, 1, 0.4)
+  // jitter it slightly with noise
+  .modulate(noise(5), 0.02)
+  // render to the screen
+  .out()
+
+stack(
+  // play both layers simultaneously:
+  // a 6-step arpeggio (scale degrees)
+  n("0 2 4 7 4 2")
+    // play it twice per cycle
+    .fast(2)
+    // map degrees onto C major
+    .scale("C:major")
+    // on a square-wave synth (chiptune timbre)
+    .sound("square")
+    // moderate volume
+    .gain(0.4)
+    // a quieter echo an eighth later, a fifth up
+    .off(0.125, (x) => x.add(note(7)).gain(0.2)),
+  // simple kick/snare beat
+  s("bd ~ sd ~").bank("RolandTR808"),
+  // triangle-wave bassline
+  note("c2 c2 g1 g1").sound("triangle").gain(0.5)
+// tempo: 140 BPM
+).cpm(140 / 4)

@@ -1,0 +1,30 @@
+// EUCLIDEAN — interlocking Euclidean rhythms (evenly-spread hits)
+// over a spinning mirrored shape.
+
+// start the Hydra visual engine
+await initHydra()
+// a triangle: radius 0.3, edge smoothing 0.1
+shape(3, 0.3, 0.1)
+  // tile it into a 5×5 grid
+  .repeat(5, 5)
+  // rotate by 0.1, spinning at speed 0.05
+  .rotate(0.1, 0.05)
+  // mirror it
+  .kaleid(2)
+  // tint amber (red, green, blue)
+  .color(0.9, 0.6, 0.2)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // 3 kicks spread evenly over 8 steps
+  s("bd(3,8)").bank("RolandTR808").gain(0.9),
+  // 5 hats spread evenly over 8 steps
+  s("hh(5,8)").gain(0.3),
+  // 2 claps over 8 steps, rotated by 1 step
+  s("cp(2,8,1)").room(0.3),
+  // euclidean bass, transposed each cycle
+  note("c2(3,8)").add(note("<0 5 7>")).sound("sawtooth").lpf(800).lpq(6).gain(0.5)
+// tempo: 120 BPM
+).cpm(120 / 4)

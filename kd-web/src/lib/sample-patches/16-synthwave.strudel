@@ -1,0 +1,32 @@
+// SYNTHWAVE — retro 80s chord progression and saw bass at 115 BPM,
+// over a pink gradient blended with an oscillator.
+
+// start the Hydra visual engine
+await initHydra()
+// a moving colour gradient, speed 1
+gradient(1)
+  // tile it into 8 horizontal bands
+  .repeat(1, 8)
+  // drift it slowly upward
+  .scrollY(0, 0.02)
+  // tint hot pink (red, green, blue)
+  .color(0.9, 0.2, 0.6)
+  // mix 50% with a dark oscillator
+  .blend(osc(5, 0, 1).color(0.1, 0, 0.3), 0.5)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // steady 707 kick
+  s("bd ~ ~ ~ bd ~ ~ ~").bank("RolandTR707").gain(0.8),
+  // clap on the off-beat, with reverb
+  s("~ ~ cp ~").room(0.4),
+  // 8 hats per cycle, quiet
+  s("hh*8").gain(0.2),
+  // classic 4-chord loop, auto-voiced on saw
+  chord("<Am F C G>").voicing().sound("sawtooth").lpf(1500).room(0.4).gain(0.4),
+  // square-wave root bass following the chords
+  note("<a1 f1 c2 g1>").sound("square").gain(0.5)
+// tempo: 115 BPM
+).cpm(115 / 4)

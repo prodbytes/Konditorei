@@ -1,0 +1,36 @@
+// GENERATIVE AMBIENT — randomly chosen, panning pentatonic notes over a
+// deep drone, behind a barely-moving haze. Never quite repeats.
+
+// start the Hydra visual engine
+await initHydra()
+// extremely slow oscillator: frequency 1, sync 0.005, offset 0.1
+osc(1, 0.005, 0.1)
+  // warp it with very slow noise
+  .modulate(noise(0.5), 0.3)
+  // tint muted blue-grey (red, green, blue)
+  .color(0.4, 0.6, 0.7)
+  // turn imperceptibly slowly
+  .rotate(0, 0.005)
+  // render to the screen
+  .out()
+
+stack(
+  // play both layers simultaneously:
+  // a random scale-degree (0–7) each cycle
+  n(irand(8))
+    // mapped onto the D-minor pentatonic scale
+    .scale("D:minor:pentatonic")
+    // on a soft triangle synth
+    .sound("triangle")
+    // one note every 2 cycles
+    .slow(2)
+    // huge reverb
+    .room(0.9)
+    // quiet
+    .gain(0.35)
+    // drift it left↔right slowly across the stereo field
+    .pan(sine.slow(7)),
+  // deep sine drone, changing every 8 cycles
+  note("<d2 a1 f2>").sound("sine").slow(8).room(0.8).gain(0.5)
+// very slow tempo: 50 cycles/min
+).cpm(50)

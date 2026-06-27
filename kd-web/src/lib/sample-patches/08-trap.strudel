@@ -1,0 +1,28 @@
+// TRAP — booming 808 sub, snappy snare and rapid hi-hats,
+// over slow dark drifting shapes.
+
+// start the Hydra visual engine
+await initHydra()
+// a 6-sided shape: radius 0.2, edge smoothing 0.05
+shape(6, 0.2, 0.05)
+  // zoom out a little
+  .scale(1.5)
+  // tint deep blue (red, green, blue)
+  .color(0.1, 0.1, 0.3)
+  // slowly twist it with an oscillator
+  .modulateRotate(osc(1), 0.2)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // sparse 808 kicks
+  s("bd ~ ~ ~ ~ ~ bd ~").bank("RolandTR808").gain(0.9),
+  // snares on the back-beats
+  s("~ ~ sd ~ ~ ~ sd ~").bank("RolandTR808"),
+  // fast 16th-note hats (trap rolls)
+  s("hh*16").bank("RolandTR808").gain(0.3),
+  // long sine sub-bass note (the 808 boom)
+  note("c1").sound("sine").slow(2).gain(0.8)
+// tempo: 140 BPM (÷8 for a 2-bar pattern)
+).cpm(140 / 8)

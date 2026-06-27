@@ -1,0 +1,44 @@
+// MELODIC TECHNO — a moving chord-scale arp with octave echoes over a
+// steady 126 BPM pulse, behind a layered kaleidoscope.
+
+// start the Hydra visual engine
+await initHydra()
+// oscillator source: frequency 10, sync 0.05, offset 0.6
+osc(10, 0.05, 0.6)
+  // fold into a 3-way kaleidoscope
+  .kaleid(3)
+  // twist it with a second oscillator
+  .modulateRotate(osc(2), 0.3)
+  // tint indigo (red, green, blue)
+  .color(0.3, 0.4, 0.9)
+  // add a faint dark noise layer on top
+  .add(noise(2).color(0.1, 0.1, 0.2))
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // 909 kick, four-on-the-floor
+  s("bd*4").bank("RolandTR909").gain(0.9),
+  // 8 hats/cycle, alternating volume
+  s("hh*8").bank("RolandTR909").gain("0.3 0.5"),
+  // clap on the off-beat, with reverb
+  s("~ cp").room(0.3),
+  // a 6-step melodic phrase (scale degrees)
+  n("0 3 5 7 5 3")
+    // chord progression: a new scale every 2 cycles
+    .scale("<a:minor c:major f:major g:major>/2")
+    // on a sawtooth synth
+    .sound("sawtooth")
+    // slow 16-cycle filter sweep for movement
+    .lpf(sine.range(500, 2500).slow(16))
+    // a bit of filter resonance
+    .lpq(8)
+    // light reverb
+    .room(0.3)
+    // moderate volume
+    .gain(0.4)
+    // a quieter echo a quarter-step later, one octave up
+    .off(0.25, (x) => x.add(note(12)).gain(0.2))
+// tempo: 126 BPM
+).cpm(126 / 4)

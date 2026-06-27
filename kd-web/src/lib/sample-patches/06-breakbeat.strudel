@@ -1,0 +1,28 @@
+// BREAKBEAT — a chopped, swung 160 BPM beat with a square sub,
+// over a noisy mirrored visual.
+
+// start the Hydra visual engine
+await initHydra()
+// perlin-noise visual source, scale 4
+noise(4)
+  // tint gold (red, green, blue)
+  .color(0.8, 0.7, 0.2)
+  // fold into a 3-way kaleidoscope
+  .kaleid(3)
+  // tilt slightly
+  .rotate(0.05)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // kick/snare break ([~ bd] = a quick off-beat kick)
+  s("bd ~ [~ bd] sd").bank("RolandTR909").gain(0.85),
+  // 8 hats/cycle, alternating volume
+  s("hh*8").bank("RolandTR909").gain("0.3 0.5"),
+  // a single late clap, with reverb
+  s("~ ~ ~ ~ ~ ~ cp ~").room(0.3),
+  // square-wave sub bass on beats 1 and 3
+  note("c2 ~ g1 ~").sound("square").lpf(700).gain(0.5)
+// tempo: 160 BPM (÷8 for a 2-bar pattern)
+).cpm(160 / 8)

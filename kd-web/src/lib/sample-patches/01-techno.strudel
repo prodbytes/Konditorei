@@ -1,0 +1,34 @@
+// TECHNO — driving four-on-the-floor with a filtered, pulsing bassline
+// under a purple kaleidoscope visual.
+
+// start the Hydra visual engine
+await initHydra()
+// oscillator source: frequency 30, sync 0.02, colour offset 0.3
+osc(30, 0.02, 0.3)
+  // fold the image into a 4-way kaleidoscope
+  .kaleid(4)
+  // tint it purple (red, green, blue)
+  .color(0.6, 0.2, 0.9)
+  // warp it with perlin noise
+  .modulate(noise(3))
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // 909 kick drum, 4 hits per cycle, loud
+  s("bd*4").bank("RolandTR909").gain(0.9),
+  // 909 clap on the off-beat, with reverb
+  s("~ cp").bank("RolandTR909").room(0.3),
+  // 8 hats/cycle, alternating volume, low-pass at 8 kHz
+  s("hh*8").bank("RolandTR909").gain("0.4 0.6").lpf(8000),
+  // bass note C2, eight times per cycle
+  note("c2*8")
+    // on a sawtooth-wave synth
+    .sound("sawtooth")
+    // sweep the low-pass cutoff 300→1400 Hz over 8 cycles
+    .lpf(sine.range(300, 1400).slow(8))
+    // moderate volume
+    .gain(0.5)
+// tempo: 132 BPM (cpm = cycles/min, ÷4 for 4 beats per cycle)
+).cpm(132 / 4)

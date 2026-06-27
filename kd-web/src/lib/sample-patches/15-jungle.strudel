@@ -1,0 +1,26 @@
+// JUNGLE — a chopped, repitched amen-style break with a heavy sub,
+// over a noisy mirrored field.
+
+// start the Hydra visual engine
+await initHydra()
+// perlin-noise visual source, scale 8
+noise(8)
+  // tint lime (red, green, blue)
+  .color(0.7, 0.9, 0.3)
+  // fold into a 4-way kaleidoscope
+  .kaleid(4)
+  // pulse its scale with an oscillator
+  .modulateScale(osc(3), 0.3)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // break sliced into 4 and repitched per slice
+  s("bd sd bd sd").bank("RolandTR909").chop(4).speed("1 1.5 1 0.5").gain(0.7),
+  // 8 hats per cycle, quiet
+  s("hh*8").gain(0.3),
+  // deep sub bass, one note per cycle
+  note("<c1 f1 g1>").sound("sawtooth").lpf(300).gain(0.7)
+// tempo: 160 BPM (÷8 for a 2-bar pattern)
+).cpm(160 / 8)

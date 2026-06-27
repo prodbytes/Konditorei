@@ -1,0 +1,44 @@
+// DUB TECHNO — hypnotic 124 BPM chord stabs drenched in echo,
+// over a feedback-loop visual (the screen feeding back into itself).
+
+// start the Hydra visual engine
+await initHydra()
+// take the previous rendered frame as input (video feedback)
+src(o0)
+  // zoom it in slightly each frame (infinite-tunnel effect)
+  .scale(1.01)
+  // rotate it a hair each frame
+  .rotate(0.005)
+  // blend in a faint green oscillator
+  .blend(osc(3, 0.1, 0.4).color(0.1, 0.4, 0.3), 0.05)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // 909 kick, four-on-the-floor
+  s("bd*4").bank("RolandTR909").gain(0.85),
+  // off-beat hats
+  s("~ hh ~ hh").gain(0.3),
+  // two-chord vamp
+  chord("<Am7 Dm7>")
+    // auto-pick a nice voicing
+    .voicing()
+    // on a sawtooth synth
+    .sound("sawtooth")
+    // dark low-pass filter
+    .lpf(700)
+    // lots of reverb
+    .room(0.7)
+    // send to the echo
+    .delay(0.5)
+    // echo spacing (dotted feel)
+    .delaytime(0.75)
+    // long echo tail
+    .delayfeedback(0.7)
+    // play the stab only on the 2nd step
+    .struct("~ x ~ ~")
+    // moderate volume
+    .gain(0.35)
+// tempo: 124 BPM
+).cpm(124 / 4)

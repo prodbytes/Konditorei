@@ -1,0 +1,26 @@
+// FOOTWORK — frantic 160 BPM syncopated kicks and chopped piano stabs,
+// over a pixelated voronoi field.
+
+// start the Hydra visual engine
+await initHydra()
+// voronoi cells: scale 10, speed 0.4, blending 0.1
+voronoi(10, 0.4, 0.1)
+  // chop it into shifting pixel blocks
+  .modulatePixelate(noise(4), 30)
+  // tint magenta (red, green, blue)
+  .color(0.9, 0.3, 0.5)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // rapid, syncopated 808 kicks
+  s("bd ~ bd ~ ~ bd ~ ~ bd ~ ~ bd ~ ~ ~ ~").bank("RolandTR808").gain(0.85),
+  // a single clap on the last beat
+  s("~ ~ ~ cp").bank("RolandTR808"),
+  // 12 hats per cycle, quiet
+  s("hh*12").gain(0.25),
+  // chopped, repitched piano; 30% of hits doubled
+  note("c3 eb3 g3").sound("piano").chop(2).speed(1.5).gain(0.4).sometimesBy(0.3, ply(2))
+// tempo: 160 BPM
+).cpm(160 / 4)

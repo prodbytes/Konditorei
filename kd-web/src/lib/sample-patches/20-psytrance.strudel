@@ -1,0 +1,38 @@
+// PSYTRANCE — a relentless rolling 16th-note bassline at 145 BPM,
+// under a hypnotic spinning kaleidoscope.
+
+// start the Hydra visual engine
+await initHydra()
+// oscillator source: frequency 25, sync 0.05, offset 0.9
+osc(25, 0.05, 0.9)
+  // fold into an 8-way kaleidoscope
+  .kaleid(8)
+  // twist it with a slow oscillator
+  .modulateRotate(osc(1), 0.5)
+  // tint chartreuse (red, green, blue)
+  .color(0.6, 0.9, 0.2)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // 909 kick, four-on-the-floor, loud
+  s("bd*4").bank("RolandTR909").gain(0.95),
+  // off-beat hats, doubled up
+  s("~ ~ hh ~").fast(2).gain(0.3),
+  // open hat on the off-beat
+  s("~ oh ~ ~").bank("RolandTR909").gain(0.3),
+  // bass note C1, sixteen times per cycle (the rolling bass)
+  note("c1*16")
+    // on a sawtooth synth
+    .sound("sawtooth")
+    // wander the filter cutoff randomly with perlin noise
+    .lpf(perlin.range(300, 1800).fast(4))
+    // filter resonance for bite
+    .lpq(10)
+    // gate the bass into a syncopated rhythm
+    .struct("x ~ x x ~ x x ~")
+    // moderate volume
+    .gain(0.5)
+// tempo: 145 BPM
+).cpm(145 / 4)

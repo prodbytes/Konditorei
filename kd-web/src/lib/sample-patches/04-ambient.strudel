@@ -1,0 +1,24 @@
+// AMBIENT — slow, reverberant pads drifting with no drums,
+// over a gently turning oscillator haze.
+
+// start the Hydra visual engine
+await initHydra()
+// very slow oscillator: frequency 2, sync 0.01, offset 0.2
+osc(2, 0.01, 0.2)
+  // tint blue (red, green, blue)
+  .color(0.3, 0.5, 0.8)
+  // tilt slightly
+  .rotate(0.01)
+  // warp it with a second rotated oscillator
+  .modulate(osc(1).rotate(0.3), 0.2)
+  // render to the screen
+  .out()
+
+stack(
+  // play both layers simultaneously:
+  // soft triangle pad, one note every 4 cycles, big reverb
+  note("<c4 e4 g4 b4>").sound("triangle").slow(4).lpf(1500).room(0.9).gain(0.4),
+  // deep sine drone alternating every 8 cycles
+  note("<c2 a1>").sound("sine").slow(8).room(0.8).gain(0.5)
+// very slow tempo: 40 cycles/min
+).cpm(40)

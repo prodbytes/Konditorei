@@ -1,0 +1,26 @@
+// DRUM & BASS — a syncopated 174 BPM break with a deep sub,
+// under a rippling voronoi field.
+
+// start the Hydra visual engine
+await initHydra()
+// voronoi cells: scale 8, speed 0.3, blending 0.3
+voronoi(8, 0.3, 0.3)
+  // pulse the cell size with a slow oscillator
+  .modulateScale(osc(2), 0.3)
+  // tint green (red, green, blue)
+  .color(0.1, 0.9, 0.6)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // syncopated 909 kicks
+  s("bd ~ ~ bd ~ ~ bd ~").bank("RolandTR909").gain(0.9),
+  // snares on the back-beats, with reverb
+  s("~ ~ sd ~ ~ ~ sd ~").bank("RolandTR909").room(0.2),
+  // fast 16th-note hats, quiet
+  s("hh*16").bank("RolandTR909").gain(0.3),
+  // low sub bassline, heavily filtered
+  note("c1 c1 g1 c1").sound("sawtooth").lpf(500).gain(0.6)
+// tempo: 174 BPM (÷8 because this pattern is 2 bars long)
+).cpm(174 / 8)

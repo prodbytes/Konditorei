@@ -8,32 +8,38 @@
 		code,
 		qrData,
 		selected = false,
+		playing = false,
 		stars = 0,
 		starred = false,
 		muted = false,
 		paused = false,
 		time,
+		showTimer = false,
 		dim = false,
 		onplay,
 		onstar,
 		onqr,
 		onpublish,
+		ongen,
 		ontoggletimer
 	}: {
 		frame: FrameId;
 		code: string;
 		qrData: string;
 		selected?: boolean;
+		playing?: boolean;
 		stars?: number;
 		starred?: boolean;
 		muted?: boolean;
 		paused?: boolean;
 		time: string;
+		showTimer?: boolean;
 		dim?: boolean;
 		onplay: () => void;
 		onstar: () => void;
 		onqr: () => void;
 		onpublish?: () => void;
+		ongen?: () => void;
 		ontoggletimer: () => void;
 	} = $props();
 
@@ -66,25 +72,37 @@
 	</div>
 	<div class="status-bar">
 		<div class="status-left">
-			<button
-				class="timer"
-				title={paused ? 'Resume timer' : 'Pause timer'}
-				aria-pressed={paused}
-				onclick={ontoggletimer}
-			>
-				{paused ? '▶' : '⏱'}
-			</button>
-			<span class="countdown">{time}</span>
-			<span>{selected ? (muted ? 'Playing (muted)' : 'Playing') : 'Ready'}</span>
+			{#if showTimer}
+				<button
+					class="timer"
+					title={paused ? 'Resume timer' : 'Pause timer'}
+					aria-pressed={paused}
+					onclick={ontoggletimer}
+				>
+					{paused ? '▶' : '⏱'}
+				</button>
+				<span class="countdown">{time}</span>
+			{/if}
+			<span>{playing ? (muted ? 'Playing (muted)' : 'Playing') : 'Paused'}</span>
 		</div>
 		<div class="actions">
+			{#if ongen}
+				<button class="gen" title="Load a random sample patch and play it" onclick={ongen}>
+					🎲 Gen
+				</button>
+			{/if}
 			{#if onpublish}
 				<button class="publish" title="Push this code to the match and all open editors" onclick={onpublish}>
 					⬆ Update
 				</button>
 			{/if}
-			<button class="select" class:active={selected} aria-pressed={selected} onclick={onplay}>
-				▶ Play
+			<button
+				class="select"
+				class:active={playing}
+				aria-pressed={playing}
+				onclick={onplay}
+			>
+				{playing ? '⏸ Pause' : '▶ Play'}
 			</button>
 			<button
 				class="star"
@@ -111,7 +129,7 @@
 	.qr-overlay {
 		position: absolute;
 		top: 8px;
-		right: 8px;
+		right: 18px; /* clear the editor's scrollbar */
 		z-index: 5;
 		cursor: pointer;
 		display: block;
@@ -216,6 +234,22 @@
 	}
 
 	.publish:hover {
+		background: rgba(255, 255, 255, 0.25);
+	}
+
+	.gen {
+		background: rgba(255, 255, 255, 0.15);
+		border: 1px solid rgba(255, 255, 255, 0.4);
+		border-radius: 0.25rem;
+		cursor: pointer;
+		padding: 0.2rem 0.6rem;
+		color: white;
+		font-family: inherit;
+		font-size: 0.8rem;
+		transition: background 0.15s;
+	}
+
+	.gen:hover {
 		background: rgba(255, 255, 255, 0.25);
 	}
 

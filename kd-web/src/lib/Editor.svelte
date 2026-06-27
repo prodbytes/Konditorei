@@ -48,5 +48,26 @@
 	.editor :global(.cm-scroller) {
 		overflow-y: auto;
 		overflow-x: hidden;
+		/* discrete scrollbar (Firefox) */
+		scrollbar-width: thin;
+		scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+	}
+
+	/* discrete scrollbar (WebKit/Chrome) */
+	.editor :global(.cm-scroller)::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.editor :global(.cm-scroller)::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.editor :global(.cm-scroller)::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.18);
+		border-radius: 4px;
+	}
+
+	.editor :global(.cm-scroller)::-webkit-scrollbar-thumb:hover {
+		background: rgba(255, 255, 255, 0.3);
 	}
 </style>

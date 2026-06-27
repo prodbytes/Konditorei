@@ -1,0 +1,24 @@
+// IDM — glitchy, randomised drums and a degraded square lead,
+// over a pixelated voronoi field.
+
+// start the Hydra visual engine
+await initHydra()
+// dense voronoi cells: scale 15, speed 0.5, blending 0.1
+voronoi(15, 0.5, 0.1)
+  // chop it into shifting pixel blocks
+  .modulatePixelate(noise(3), 20)
+  // tint cyan (red, green, blue)
+  .color(0.2, 0.9, 0.9)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // kick+snare; 40% of the time a hit is doubled (ply 2)
+  s("bd sd").bank("RolandTR909").sometimesBy(0.4, ply(2)).gain(0.8),
+  // hats; occasionally a burst played twice as fast
+  s("hh*8").gain(0.3).sometimes(fast(2)),
+  // square arpeggio with 30% of notes randomly dropped
+  note("c e g b").sound("square").lpf(2000).gain(0.4).degradeBy(0.3)
+// tempo: 120 BPM
+).cpm(120 / 4)

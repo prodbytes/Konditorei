@@ -1,0 +1,24 @@
+// LO-FI — a sleepy 75 BPM piano loop with dusty drums,
+// over a soft warm haze.
+
+// start the Hydra visual engine
+await initHydra()
+// slow oscillator: frequency 3, sync 0.02, offset 0.4
+osc(3, 0.02, 0.4)
+  // tint warm sepia (red, green, blue)
+  .color(0.6, 0.5, 0.4)
+  // warp it gently with slow noise
+  .modulate(noise(1), 0.05)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // a mellow piano note per cycle, filtered + reverbed
+  note("<c3 a2 f2 g2>").sound("piano").lpf(1200).room(0.5).gain(0.5),
+  // simple 707 kick/snare beat
+  s("bd ~ sd ~").bank("RolandTR707").gain(0.5),
+  // 4 hats/cycle, quiet, pitched down slightly for that dusty feel
+  s("hh*4").gain(0.2).speed(0.9)
+// tempo: 75 BPM
+).cpm(75 / 4)

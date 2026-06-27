@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import Frame from '$lib/Frame.svelte';
 	import { codeA, codeB, codeFor, type FrameId } from '$lib/patches';
+	import { randomSample } from '$lib/samples';
 
 	let { matchId, solo = null }: { matchId: string; solo?: FrameId | null } = $props();
 
@@ -40,9 +41,9 @@
 		});
 	}
 	let muted = $state(false);
+	let playing = $state(false);
 	let remaining = $state(ROTATE_SECONDS);
 	let paused = $state(false);
-	let needsStart = $state(false);
 
 	const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
@@ -59,10 +60,22 @@
 
 	async function select(frame: FrameId) {
 		selected = frame;
+		playing = true;
 		remaining = ROTATE_SECONDS; // restart the countdown on every (re)selection
 		const code = refFor(frame)?.getValue() ?? codeFor(frame);
 		const { playCode } = await getEngine();
 		await playCode(code);
+	}
+
+	// Play/pause the selected frame. Clicking an unselected frame plays it.
+	async function togglePlay(frame: FrameId) {
+		if (selected === frame && playing) {
+			playing = false;
+			const { stopAudio } = await getEngine();
+			stopAudio();
+		} else {
+			await select(frame);
+		}
 	}
 
 	async function toggleMute() {
@@ -102,6 +115,14 @@
 		ref?.setValue(code);
 	}
 
+	// Load a random sample into the editor and play it.
+	async function gen(frame: FrameId) {
+		const ref = refFor(frame);
+		const sample = randomSample(ref?.getValue());
+		ref?.setValue(sample);
+		await select(frame); // select() reads the editor's (new) contents and plays
+	}
+
 	// Publish the solo editor's current code to shared memory (and every editor).
 	async function publish(frame: FrameId) {
 		const code = refFor(frame)?.getValue();
@@ -117,21 +138,12 @@
 	function startTicker() {
 		if (ticker || solo) return; // no rotation in solo view
 		ticker = setInterval(() => {
-			if (paused || selected === null) return;
+			if (paused || !playing || selected === null) return;
 			remaining -= 1;
 			if (remaining <= 0) flip();
 		}, 1000);
 	}
 	onDestroy(() => clearInterval(ticker));
-
-	// Click-to-start fallback when the browser blocks autoplay.
-	async function start() {
-		needsStart = false;
-		const engine = await getEngine();
-		await engine.resumeAudio();
-		if (selected) await select(selected);
-		startTicker();
-	}
 
 	onMount(async () => {
 		// Restore this browser's vote for the match and subscribe to live counts.
@@ -156,14 +168,23 @@
 		await engine.initAudioEngine();
 		engine.stopAudio(); // clear any leftover/stacked audio first
 
-		// Solo view plays its one frame; dual view kicks off a random side.
-		await select(solo ?? (Math.random() < 0.5 ? 'frameA' : 'frameB'));
+		// Load this match's current code (a fresh match is seeded server-side
+		// with two different random sample patches).
+		try {
+			const c = (await (await fetch(`/api/codes/${matchId}`)).json()) as {
+				frameA: string;
+				frameB: string;
+			};
+			if (solo === null || solo === 'frameA') applyCode('frameA', c.frameA);
+			if (solo === null || solo === 'frameB') applyCode('frameB', c.frameB);
+		} catch {
+			// fall back to whatever seed values the editors already hold
+		}
 
-		// Try to autostart. Browsers allow this for sites with prior engagement
-		// (localhost during dev usually qualifies); otherwise show a start gate.
-		const running = await engine.resumeAudio();
-		if (running) startTicker();
-		else needsStart = true;
+		// Autoplay is unreliable in browsers, so both frames start paused (the
+		// Play button is shown). Pressing Play starts that frame and the
+		// rotation countdown; the ticker idles here until then.
+		startTicker();
 	});
 
 	const timeFor = (frame: FrameId) =>
@@ -173,9 +194,25 @@
 <div class="app">
 	<header class="topbar">
 		<span class="brand">
-			Konditorei <span class="match-id">{matchId}{solo ? ` / ${solo === 'frameA' ? 'A' : 'B'}` : ''}</span>
+			<a href="/" title="Start a new match">Konditorei</a>
+			<span class="match-id">
+				<a href={`/${matchId}`} title="Open the full match">{matchId}</a>{#if solo}
+					/ <a
+						href={`/${matchId}/${solo === 'frameA' ? 'A' : 'B'}`}
+						title="Open this frame's editor">{solo === 'frameA' ? 'A' : 'B'}</a
+					>{/if}
+			</span>
 		</span>
 		<div class="global-actions">
+			<a
+				class="doclink"
+				href="https://strudel.cc/learn/"
+				target="_blank"
+				rel="noopener"
+				title="Strudel documentation"
+			>
+				Docs
+			</a>
 			<button
 				class="mute"
 				class:active={muted}
@@ -196,16 +233,19 @@
 				code={codeA}
 				qrData={soloUrl('frameA')}
 				selected={selected === 'frameA'}
+				playing={selected === 'frameA' && playing}
 				starred={starred === 'frameA'}
 				stars={stars.frameA}
 				{muted}
 				{paused}
 				time={timeFor('frameA')}
+				showTimer={solo === null}
 				dim={selected !== null && selected !== 'frameA'}
-				onplay={() => select('frameA')}
+				onplay={() => togglePlay('frameA')}
 				onstar={() => vote('frameA')}
 				onqr={muteForQr}
 				onpublish={solo === 'frameA' ? () => publish('frameA') : undefined}
+				ongen={solo === 'frameA' ? () => gen('frameA') : undefined}
 				ontoggletimer={toggleTimer}
 			/>
 		{/if}
@@ -216,25 +256,21 @@
 				code={codeB}
 				qrData={soloUrl('frameB')}
 				selected={selected === 'frameB'}
+				playing={selected === 'frameB' && playing}
 				starred={starred === 'frameB'}
 				stars={stars.frameB}
 				{muted}
 				{paused}
 				time={timeFor('frameB')}
+				showTimer={solo === null}
 				dim={selected !== null && selected !== 'frameB'}
-				onplay={() => select('frameB')}
+				onplay={() => togglePlay('frameB')}
 				onstar={() => vote('frameB')}
 				onqr={muteForQr}
 				onpublish={solo === 'frameB' ? () => publish('frameB') : undefined}
+				ongen={solo === 'frameB' ? () => gen('frameB') : undefined}
 				ontoggletimer={toggleTimer}
 			/>
-		{/if}
-
-		{#if needsStart}
-			<button class="start-overlay" onclick={start}>
-				<span class="start-icon">▶</span>
-				<span>Click to start</span>
-			</button>
 		{/if}
 	</div>
 </div>
@@ -279,6 +315,15 @@
 		letter-spacing: 0.02em;
 	}
 
+	.brand a {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.brand a:hover {
+		text-decoration: underline;
+	}
+
 	.match-id {
 		font-weight: 400;
 		font-size: 0.7rem;
@@ -313,6 +358,24 @@
 		background: #484848;
 	}
 
+	.doclink {
+		display: flex;
+		align-items: center;
+		background: #3a3a3a;
+		border: 1px solid #4a4a4a;
+		border-radius: 0.25rem;
+		color: #ddd;
+		text-decoration: none;
+		padding: 0.1rem 0.5rem;
+		font-size: 0.75rem;
+		line-height: 1.6;
+		transition: background 0.15s;
+	}
+
+	.doclink:hover {
+		background: #484848;
+	}
+
 	.topbar .mute.active {
 		background: #b5483f;
 		border-color: #b5483f;
@@ -324,29 +387,5 @@
 		width: 100%;
 		flex: 1;
 		min-height: 0;
-	}
-
-	.start-overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 100;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.75rem;
-		border: none;
-		cursor: pointer;
-		background: rgba(15, 16, 22, 0.7);
-		backdrop-filter: blur(2px);
-		color: white;
-		font-family: sans-serif;
-		font-size: 1.1rem;
-		letter-spacing: 0.03em;
-	}
-
-	.start-icon {
-		font-size: 3rem;
-		line-height: 1;
 	}
 </style>

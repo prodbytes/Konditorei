@@ -1,6 +1,7 @@
 // In-memory, per-match frame code shared across every connected editor.
 // (Server module — never shipped to the client. Resets when the server restarts.)
-import { codeA, codeB, type FrameId } from '$lib/patches';
+import type { FrameId } from '$lib/patches';
+import { randomSample } from '$lib/samples';
 
 export type Codes = { frameA: string; frameB: string };
 
@@ -10,7 +11,9 @@ const listeners = new Map<string, Set<(c: Codes) => void>>();
 function ensure(match: string): Codes {
 	let c = store.get(match);
 	if (!c) {
-		c = { frameA: codeA, frameB: codeB }; // seed defaults until someone publishes
+		// A fresh match starts with two different random sample patches.
+		const frameA = randomSample();
+		c = { frameA, frameB: randomSample(frameA) };
 		store.set(match, c);
 	}
 	return c;

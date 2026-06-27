@@ -1,0 +1,26 @@
+// DUB — spacious 70 BPM skank with echoing claps and a deep bassline,
+// over a slowly rotating green oscillator.
+
+// start the Hydra visual engine
+await initHydra()
+// oscillator source: frequency 5, sync 0.03, offset 0.5
+osc(5, 0.03, 0.5)
+  // tilt slightly
+  .rotate(0.02)
+  // tint green (red, green, blue)
+  .color(0.2, 0.7, 0.3)
+  // warp it with a very slow oscillator
+  .modulate(osc(0.5), 0.1)
+  // render to the screen
+  .out()
+
+stack(
+  // play all of these layers simultaneously:
+  // a single 707 kick per cycle
+  s("bd ~ ~ ~").bank("RolandTR707").gain(0.8),
+  // clap drenched in reverb + dub echo
+  s("~ ~ cp ~").room(0.8).delay(0.5).delaytime(0.375).delayfeedback(0.6),
+  // slow, deep sawtooth bassline
+  note("<c2 g1>").sound("sawtooth").lpf(400).gain(0.6).slow(2)
+// tempo: 70 BPM
+).cpm(70 / 4)
