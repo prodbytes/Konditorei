@@ -1,44 +1,120 @@
 <script lang="ts">
+	import { onMount, onDestroy } from 'svelte';
 	import Editor from '$lib/Editor.svelte';
 
-	let starred = $state<'green' | 'blue' | null>(null);
-	let selected = $state<'green' | 'blue' | null>(null);
+	const ROTATE_SECONDS = 30;
+
+	let starred = $state<'frameA' | 'frameB' | null>(null);
+	let selected = $state<'frameA' | 'frameB' | null>(null);
 	let muted = $state(false);
+	let remaining = $state(ROTATE_SECONDS);
+	let paused = $state(false);
+	let needsStart = $state(false);
 
-	const greenCode = `// Strudel + Hydra — green side
+	const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+	let editorA: Editor;
+	let editorB: Editor;
+
+	// Lazy, client-only import — @strudel/web touches `window` at load.
+	let engine: typeof import('$lib/strudel') | null = null;
+	async function getEngine() {
+		if (!engine) engine = await import('$lib/strudel');
+		return engine;
+	}
+
+	async function select(frame: 'frameA' | 'frameB') {
+		selected = frame;
+		remaining = ROTATE_SECONDS; // restart the countdown on every (re)selection
+		const code = frame === 'frameA' ? editorA.getValue() : editorB.getValue();
+		const { playCode } = await getEngine();
+		await playCode(code);
+	}
+
+	async function toggleMute() {
+		muted = !muted;
+		const { setMuted } = await getEngine();
+		setMuted(muted);
+	}
+
+	// Switch to the other frame (select() restarts the countdown).
+	function flip() {
+		select(selected === 'frameA' ? 'frameB' : 'frameA');
+	}
+
+	function toggleTimer() {
+		paused = !paused;
+	}
+
+	let ticker: ReturnType<typeof setInterval> | undefined;
+	function startTicker() {
+		if (ticker) return;
+		ticker = setInterval(() => {
+			if (paused || selected === null) return;
+			remaining -= 1;
+			if (remaining <= 0) flip();
+		}, 1000);
+	}
+	onDestroy(() => clearInterval(ticker));
+
+	// Click-to-start fallback when the browser blocks autoplay.
+	async function start() {
+		needsStart = false;
+		const engine = await getEngine();
+		await engine.resumeAudio();
+		if (selected) await select(selected);
+		startTicker();
+	}
+
+	// Auto-play a random side on load. Browsers may keep the audio context
+	// suspended until the first user gesture, so visuals start immediately and
+	// sound kicks in on the first interaction (e.g. clicking a Select button).
+	onMount(async () => {
+		const engine = await getEngine();
+		await engine.initAudioEngine();
+		engine.stopAudio(); // clear any leftover/stacked audio first
+		await select(Math.random() < 0.5 ? 'frameA' : 'frameB');
+
+		// Try to autostart. Browsers allow this for sites with prior engagement
+		// (localhost during dev usually qualifies); otherwise show a start gate.
+		const running = await engine.resumeAudio();
+		if (running) startTicker();
+		else needsStart = true;
+	});
+
+	const codeA = `// Strudel + Hydra — frame A
 await initHydra()
 
-// kaleidoscopic oscillator
-osc(18, 0.1, 0.9)
-  .color(0.4, 0.9, 0.5)
-  .kaleid(5)
-  .rotate(0.1, 0.05)
-  .modulate(noise(2))
+// slow drifting haze
+osc(4, 0.03, 0.3)
+  .color(0.4, 0.8, 0.5)
+  .rotate(0.04, 0.01)
+  .modulate(noise(0.4))
   .out()
 
-// dub techno groove
+// mellow lo-fi dub
 stack(
-  note("c2 [eb2 g2] c2 g1").sound("sawtooth").lpf(700).room(0.3),
-  s("bd*2, ~ hh, ~ cp").bank("RolandTR909")
-).cpm(120)`;
+  note("<c2 g1 eb2 f1>").sound("sawtooth").lpf(380).gain(0.45).room(0.7).slow(2),
+  note("<c4 eb4 g4 bb4>").sound("triangle").lpf(700).gain(0.3).room(0.8).slow(4),
+  s("bd ~ ~ ~, ~ ~ rim ~").bank("RolandTR707").gain(0.35)
+).cpm(58)`;
 
-	const blueCode = `// Strudel + Hydra — blue side
+	const codeB = `// Strudel + Hydra — frame B
 await initHydra()
 
-// pulsing voronoi field
-voronoi(6, 0.3, 0.2)
-  .color(0.3, 0.5, 1.0)
-  .scrollX(0.1)
-  .repeat(2, 2)
-  .modulateScale(osc(3), 0.2)
+// gentle voronoi drift
+voronoi(3, 0.12, 0.1)
+  .color(0.3, 0.5, 0.9)
+  .scrollX(0.02)
+  .modulateScale(osc(0.5), 0.1)
   .out()
 
-// dreamy arpeggio
+// dusty lo-fi hip-hop
 stack(
-  n("0 2 4 6 7 6 4 2").scale("A:minor").sound("triangle").delay(0.4).room(0.5),
-  s("bd ~ sd ~").bank("RolandTR808"),
-  s("hh*8").gain(0.35)
-).cpm(110)`;
+  n("0 ~ 2 ~ 3 ~ 2 ~").scale("D:minor:pentatonic").sound("piano").gain(0.4).lpf(1100).room(0.4),
+  s("bd ~ ~ bd, ~ sd ~ ~").bank("RolandTR808").gain(0.4),
+  s("hh*4").gain(0.18).lpf(2800)
+).cpm(72)`;
 </script>
 
 <div class="app">
@@ -50,7 +126,7 @@ stack(
 				class:active={muted}
 				aria-pressed={muted}
 				title={muted ? 'Unmute' : 'Mute'}
-				onclick={() => (muted = !muted)}
+				onclick={toggleMute}
 			>
 				{muted ? '🔇' : '🔊'}
 			</button>
@@ -58,58 +134,87 @@ stack(
 	</header>
 
 	<div class="split">
-		<div class="frame green">
+		<div class="frame frameA" class:dim={selected !== null && selected !== 'frameA'}>
 		<div class="content">
-			<Editor value={greenCode} />
+			<Editor bind:this={editorA} value={codeA} />
 		</div>
 		<div class="status-bar">
-			<span>Ready</span>
+			<div class="status-left">
+				<button
+					class="timer"
+					title={paused ? 'Resume timer' : 'Pause timer'}
+					aria-pressed={paused}
+					onclick={toggleTimer}
+				>
+					{paused ? '▶' : '⏱'}
+				</button>
+				<span class="countdown">{fmtTime(remaining)}</span>
+				<span>{selected === 'frameA' ? (muted ? 'Playing (muted)' : 'Playing') : 'Ready'}</span>
+			</div>
 			<div class="actions">
 				<button
 					class="select"
-					class:active={selected === 'green'}
-					aria-pressed={selected === 'green'}
-					onclick={() => (selected = 'green')}
+					class:active={selected === 'frameA'}
+					aria-pressed={selected === 'frameA'}
+					onclick={() => select('frameA')}
 				>
 					Select
 				</button>
 				<button
 					class="star"
-					class:active={starred === 'green'}
-					aria-pressed={starred === 'green'}
-					onclick={() => (starred = 'green')}
+					class:active={starred === 'frameA'}
+					aria-pressed={starred === 'frameA'}
+					onclick={() => (starred = 'frameA')}
 				>
 					★
 				</button>
 			</div>
 		</div>
 	</div>
-	<div class="frame blue">
+	<div class="frame frameB" class:dim={selected !== null && selected !== 'frameB'}>
 		<div class="content">
-			<Editor value={blueCode} />
+			<Editor bind:this={editorB} value={codeB} />
 		</div>
 		<div class="status-bar">
-			<span>Ready</span>
+			<div class="status-left">
+				<button
+					class="timer"
+					title={paused ? 'Resume timer' : 'Pause timer'}
+					aria-pressed={paused}
+					onclick={toggleTimer}
+				>
+					{paused ? '▶' : '⏱'}
+				</button>
+				<span class="countdown">{fmtTime(remaining)}</span>
+				<span>{selected === 'frameB' ? (muted ? 'Playing (muted)' : 'Playing') : 'Ready'}</span>
+			</div>
 			<div class="actions">
 				<button
 					class="select"
-					class:active={selected === 'blue'}
-					aria-pressed={selected === 'blue'}
-					onclick={() => (selected = 'blue')}
+					class:active={selected === 'frameB'}
+					aria-pressed={selected === 'frameB'}
+					onclick={() => select('frameB')}
 				>
 					Select
 				</button>
 				<button
 					class="star"
-					class:active={starred === 'blue'}
-					aria-pressed={starred === 'blue'}
-					onclick={() => (starred = 'blue')}
+					class:active={starred === 'frameB'}
+					aria-pressed={starred === 'frameB'}
+					onclick={() => (starred = 'frameB')}
 				>
 					★
 				</button>
 			</div>
 		</div>
 	</div>
+
+	{#if needsStart}
+		<button class="start-overlay" onclick={start}>
+			<span class="start-icon">▶</span>
+			<span>Click to start</span>
+		</button>
+	{/if}
 	</div>
 </div>
 
@@ -123,6 +228,15 @@ stack(
 		display: flex;
 		flex-direction: column;
 		height: 100vh;
+		/* Own stacking layer above the fixed #hydra-canvas so the visuals
+		   sit behind the UI instead of painting over the topbar/status bars. */
+		position: relative;
+		z-index: 1;
+	}
+
+	/* Keep hydra's fullscreen canvas behind the app layer. */
+	:global(#hydra-canvas) {
+		z-index: 0;
 	}
 
 	.topbar {
@@ -188,6 +302,12 @@ stack(
 		flex: 1;
 		display: flex;
 		flex-direction: column;
+		transition: opacity 0.2s;
+	}
+
+	/* Unselected frame reads as inactive; selected stays full strength. */
+	.frame.dim {
+		opacity: 0.4;
 	}
 
 	.content {
@@ -196,12 +316,19 @@ stack(
 		overflow: hidden;
 	}
 
-	.green {
-		background: #b5e8b0;
+	/* Translucent tints so the fullscreen #hydra-canvas shows through. */
+	.frameA {
+		background: rgba(181, 232, 176, 0.25);
 	}
 
-	.blue {
-		background: #aecbeb;
+	.frameB {
+		background: rgba(174, 203, 235, 0.25);
+	}
+
+	/* Let the editor sit over the visuals with a readable dark scrim. */
+	.content :global(.cm-editor),
+	.content :global(.cm-gutters) {
+		background: rgba(20, 22, 30, 0.55);
 	}
 
 	.status-bar {
@@ -213,6 +340,55 @@ stack(
 		color: white;
 		font-family: sans-serif;
 		font-size: 0.85rem;
+	}
+
+	.start-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		border: none;
+		cursor: pointer;
+		background: rgba(15, 16, 22, 0.7);
+		backdrop-filter: blur(2px);
+		color: white;
+		font-family: sans-serif;
+		font-size: 1.1rem;
+		letter-spacing: 0.03em;
+	}
+
+	.start-icon {
+		font-size: 3rem;
+		line-height: 1;
+	}
+
+	.status-left {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.timer {
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 0;
+		line-height: 1;
+		font-size: 1rem;
+		color: rgba(255, 255, 255, 0.85);
+	}
+
+	.timer:hover {
+		color: white;
+	}
+
+	.countdown {
+		font-variant-numeric: tabular-nums;
+		opacity: 0.85;
 	}
 
 	.actions {

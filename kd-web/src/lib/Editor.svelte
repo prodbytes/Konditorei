@@ -18,6 +18,11 @@
 
 		return () => view.destroy();
 	});
+
+	/** Current editor contents (falls back to the seed value before mount). */
+	export function getValue(): string {
+		return view ? view.state.doc.toString() : value;
+	}
 </script>
 
 <div class="editor" bind:this={container}></div>
