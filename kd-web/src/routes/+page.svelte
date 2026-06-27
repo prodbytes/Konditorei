@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import Editor from '$lib/Editor.svelte';
+	import QrCode from '$lib/QrCode.svelte';
 
 	const ROTATE_SECONDS = 30;
 
@@ -135,6 +136,7 @@ stack(
 
 	<div class="split">
 		<div class="frame frameA" class:dim={selected !== null && selected !== 'frameA'}>
+		<div class="qr-overlay"><QrCode data={codeA} /></div>
 		<div class="content">
 			<Editor bind:this={editorA} value={codeA} />
 		</div>
@@ -158,7 +160,7 @@ stack(
 					aria-pressed={selected === 'frameA'}
 					onclick={() => select('frameA')}
 				>
-					Select
+					▶ Play
 				</button>
 				<button
 					class="star"
@@ -172,6 +174,7 @@ stack(
 		</div>
 	</div>
 	<div class="frame frameB" class:dim={selected !== null && selected !== 'frameB'}>
+		<div class="qr-overlay"><QrCode data={codeB} /></div>
 		<div class="content">
 			<Editor bind:this={editorB} value={codeB} />
 		</div>
@@ -195,7 +198,7 @@ stack(
 					aria-pressed={selected === 'frameB'}
 					onclick={() => select('frameB')}
 				>
-					Select
+					▶ Play
 				</button>
 				<button
 					class="star"
@@ -303,6 +306,15 @@ stack(
 		display: flex;
 		flex-direction: column;
 		transition: opacity 0.2s;
+		position: relative;
+	}
+
+	.qr-overlay {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		z-index: 5;
+		pointer-events: none;
 	}
 
 	/* Unselected frame reads as inactive; selected stays full strength. */
