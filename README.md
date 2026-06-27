@@ -2,6 +2,8 @@
 
 **Two editors. One stage.**
 
+![Konditorei — Frame A vs Frame B, two Strudel + Hydra patches battling](docs/screenshot.png)
+
 Konditorei is a head-to-head live-coding music battle for learning
 [**Strudel**](https://strudel.cc) — the browser-native language for making music
 with code — built on Strudel (sound) and [Hydra](https://hydra.ojack.xyz)
