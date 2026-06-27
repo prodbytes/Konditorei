@@ -1,0 +1,7 @@
+version: "0.5"
+
+processes:
+  kd-web:
+    command: ./scripts/dev-start.sh
+    availability:
+      restart: on_failure
