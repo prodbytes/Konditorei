@@ -1,0 +1,85 @@
+// ============================================================
+// lo-fi backing track in B minor — slow, dreamy, easy
+// ------------------------------------------------------------
+// Musical: a laid-back lo-fi groove. Key center G/Bm (G^7–D^7–A7
+//   borrowed-chord loop), tempo ~52 BPM. Everything is soft,
+//   low-passed and washed in reverb for a hazy bedroom feel.
+// Technical: setcps drives the global tempo; each $: line is an
+//   independent voice (track) layered in parallel. Lines marked
+//   _$: are muted (commented-out track). Heavy use of .lpf to
+//   darken timbres and .room/.delay for space.
+// ============================================================
+
+const bpm=52              // slow, relaxed tempo
+const drums = "AkaiLinn"  // vintage drum-machine sample bank (warm, lo-fi)
+
+setcps(bpm/60/4)          // cycles-per-second: BPM in 4/4 (1 cycle = 1 bar)
+
+// --- ATMOSPHERE: brown noise bed ----------------------------
+// Musical: a faint background rumble that glues the mix together.
+// Technical: .slow(2) stretches the noise over 2 cycles; very low
+//   gain + lpf(700) keep it a soft, dark hiss sitting under everything.
+$: sound("brown")
+    .slow(2)
+    .gain(0.06)
+    .lpf(700)
+    .scope()              // visualises the waveform in the Strudel UI
+
+// --- DRUMS: kick + snare backbeat ---------------------------
+// Musical: classic boom-bap pulse — kick on beat 1, snare on beat 3.
+// Technical: 8-step pattern over one bar; lpf(1200) muffles the
+//   transients, room/roomsize add a short ambient tail.
+$: sound("bd ~ ~ ~ sd ~ ~ ~")
+  .bank(drums)
+  .gain(0.36)
+  .lpf(1200)
+  .room(0.4)
+  .roomsize(2)
+
+// --- DRUMS: hi-hats -----------------------------------------
+// Musical: sparse, syncopated, swung hats for a loose human feel.
+// Technical: swingBy(1/3,4) delays off-beats for triplet swing;
+//   dotted-eighth delay (delaytime 0.375) echoes them into the space.
+$: sound("hh ~ hh ~ ~ hh ~ ~")
+  .bank(drums)
+  .gain(0.09)
+  .lpf(6000)
+  .swingBy(1/3, 4)
+  .delay(0.3)
+  .delaytime(0.375)
+  .delayfeedback(0.3)
+  .room(0.3)
+
+// --- BASS: root-note movement -------------------------------
+// Musical: outlines the harmony (G–D–A) one low note per beat group.
+// Technical: gm_fretless_bass sampled instrument, lpf(500) keeps it
+//   warm and round, low gain so it supports rather than dominates.
+$: note("g1 ~ ~ ~ d2 ~ ~ ~ a1 ~ ~ ~")
+  .sound("sine")
+  .lpf(500)
+  .gain(0.4)
+
+// --- CHORDS: electric piano pad -----------------------------
+// Musical: the harmonic core — a 3-chord loop (G^7 D^7 A7), one
+//   chord per 4 cycles, giving the dreamy major-7th colour.
+// Technical: .voicing() auto-arranges chord tones; long attack/
+//   release + room make it bloom slowly like a pad.
+$: chord("<G^7 D^7 A7>/4")
+    .voicing()
+    .sound("gm_epiano1")
+    .lpf(600)
+    .attack(0.3)
+    .release(1.2)
+    .room(0.6)
+    .gain(0.15)
+
+// --- MELODY: nylon guitar motif -----------------------------
+// Musical: a simple, wistful top-line phrase floating over the chords.
+// Technical: pattern string split across two lines for readability;
+//   .slow(2) stretches it over 2 bars so it feels unhurried.
+$: note("b4 ~ d5 a4 ~ g4 ~ ~")
+    .sound("gm_acoustic_guitar_nylon")
+    .lpf(2000)
+    .room(0.3)
+    .gain(0.6)
+    .slow(2)
