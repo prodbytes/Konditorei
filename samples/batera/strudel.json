@@ -1,4 +1,5 @@
 {
+  "_base": "https://raw.githubusercontent.com/prodbytes/Konditorei/main/samples/batera/",
   "bd": ["CRBD2.mp3"],
   "sd": ["CRSD2.mp3", "CRSDF2.mp3"],
   "rim": ["CRRIM.mp3"],
