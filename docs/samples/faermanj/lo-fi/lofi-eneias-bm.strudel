@@ -1,0 +1,10 @@
+samples('https://raw.githubusercontent.com/prodbytes/Konditorei/main/samples/batera/strudel.json')
+
+
+const bpm=80
+setcps(bpm/60/4)          // cycles-per-second: BPM in 4/4 (1 cycle = 1 bar)
+
+
+_$: sound("brown").scope()   
+
+$: sound("bd ~ ~ ~").scope()   
