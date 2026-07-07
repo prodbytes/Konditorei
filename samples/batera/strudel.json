@@ -1,0 +1,12 @@
+{
+  "_base": "./",
+  "bd": ["CRBD2.mp3"],
+  "sd": ["CRSD2.mp3", "CRSDF2.mp3"],
+  "rim": ["CRRIM.mp3"],
+  "ht": ["CRTM1.mp3", "CRTMF1.mp3"],
+  "lt": ["CRTM3.mp3", "CRTMF3.mp3"],
+  "hh": ["HH1.mp3", "HH2.mp3"],
+  "cr": ["CYC7.mp3", "CYC9.mp3"],
+  "cymroll": ["CYCROLL.mp3"],
+  "rd": ["CYR1.mp3", "CYR2.mp3", "CYR3.mp3"]
+}
